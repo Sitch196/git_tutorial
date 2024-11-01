@@ -1,1 +1,1 @@
-console.log("new feature 3 ");
+console.log("conflict 2 ");

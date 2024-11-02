@@ -1,1 +1,1 @@
-console.log("conflict 1 ");
+console.log("newest feature added on feature1 branch ");

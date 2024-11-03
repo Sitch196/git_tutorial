@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Finder by Ingredients</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .search-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .ingredients-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            min-height: 35px;
+        }
+
+        .ingredient-tag {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ingredient-tag button {
+            background: none;
+            border: none;
+            color: #1565c0;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background-color: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .search-btn:hover {
+            background-color: #0d47a1;
+        }
+
+        .search-btn:disabled {
+            background-color: #bbdefb;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: #d32f2f;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .meals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .meal-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .meal-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .meal-card-content {
+            padding: 15px;
+        }
+
+        .meal-card h3 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .meals-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 800px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .meal-details img {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin: 0 auto 20px;
+            display: block;
+        }
+
+        .meal-details h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .meal-info {
+            margin-bottom: 20px;
+        }
+
+        .meal-info span {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-right: 10px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .ingredients-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ingredient-item {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .instructions {
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .youtube-link {
+            display: inline-block;
+            background-color: #ff0000;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .youtube-link:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Meal Finder by Ingredients</h1>
+        
+        <div class="search-container">
+            <div class="ingredients-container" id="ingredientTags"></div>
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="ingredientInput" 
+                    placeholder="Type ingredient and press Enter"
+                >
+                <button id="searchButton" class="search-btn">Search Meals</button>
+            </div>
+            <div id="error" class="error"></div>
+        </div>
+
+        <div id="mealsGrid" class="meals-grid"></div>
+
+        <div id="mealModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <div id="mealDetails" class="meal-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ingredientInput = document.getElementById('ingredientInput');
+        const ingredientTags = document.getElementById('ingredientTags');
+        const searchButton = document.getElementById('searchButton');
+        const errorDiv = document.getElementById('error');
+        const mealsGrid = document.getElementById('mealsGrid');
+
+        let ingredients = [];
+
+        // Add ingredient when Enter is pressed
+        ingredientInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const ingredient = ingredientInput.value.trim().toLowerCase();
+                
+                if (ingredient && !ingredients.includes(ingredient)) {
+                    ingredients.push(ingredient);
+                    updateIngredientTags();
+                    ingredientInput.value = '';
+                }
+            }
+        });
+
+        // Update ingredient tags display
+        function updateIngredientTags() {
+            ingredientTags.innerHTML = ingredients.map((ingredient, index) => `
+                <span class="ingredient-tag">
+                    ${ingredient}
+                    <button onclick="removeIngredient(${index})">×</button>
+                </span>
+            `).join('');
+        }
+
+        // Remove ingredient
+        function removeIngredient(index) {
+            ingredients.splice(index, 1);
+            updateIngredientTags();
+        }
+
+        // Search meals
+        searchButton.addEventListener('click', async () => {
+            if (ingredients.length === 0) {
+                errorDiv.textContent = 'Please add at least one ingredient';
+                return;
+            }
+
+            errorDiv.textContent = '';
+            searchButton.disabled = true;
+            mealsGrid.innerHTML = '<div class="loading">Searching for meals...</div>';
+
+            try {
+                // Get meals for each ingredient
+                const mealPromises = ingredients.map(ingredient =>
+                    fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`)
+                        .then(response => response.json())
+                );
+
+                const responses = await Promise.all(mealPromises);
+                
+                // Find meals that contain ALL ingredients
+                const commonMeals = responses.reduce((common, response, index) => {
+                    const currentMeals = response.meals || [];
+                    if (index === 0) return currentMeals;
+                    return common.filter(commonMeal =>
+                        currentMeals.some(meal => meal.idMeal === commonMeal.idMeal)
+                    );
+                }, []);
+
+                if (commonMeals.length === 0) {
+                    mealsGrid.innerHTML = '<div class="error">No meals found with all these ingredients</div>';
+                } else {
+                    displayMeals(commonMeals);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                errorDiv.textContent = 'Error searching for meals. Please try again.';
+                mealsGrid.innerHTML = '';
+            } finally {
+                searchButton.disabled = false;
+            }
+        });
+
+        // Display meals in grid
+        function displayMeals(meals) {
+            mealsGrid.innerHTML = meals.map(meal => `
+                <div class="meal-card">
+                    <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                    <div class="meal-card-content">
+                        <h3>${meal.strMeal}</h3>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayMeals(meals) {
+            mealsGrid.innerHTML = meals.map(meal => `
+                <div class="meal-card" onclick="showMealDetails('${meal.strMeal}')">
+                    <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                    <div class="meal-card-content">
+                        <h3>${meal.strMeal}</h3>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add these new functions for the modal
+        async function showMealDetails(mealName) {
+            try {
+                const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${mealName}`);
+                const data = await response.json();
+                const meal = data.meals[0];
+
+                if (meal) {
+                    // Get ingredients and measurements
+                    const ingredients = [];
+                    for (let i = 1; i <= 20; i++) {
+                        if (meal[`strIngredient${i}`]) {
+                            ingredients.push({
+                                ingredient: meal[`strIngredient${i}`],
+                                measure: meal[`strMeasure${i}`]
+                            });
+                        }
+                    }
+
+                    // Create modal content
+                    document.getElementById('mealDetails').innerHTML = `
+                        <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                        <h2>${meal.strMeal}</h2>
+                        
+                        <div class="meal-info">
+                            <span>Category: ${meal.strCategory}</span>
+                            <span>Area: ${meal.strArea}</span>
+                        </div>
+
+                        <h3>Ingredients:</h3>
+                        <div class="ingredients-list">
+                            ${ingredients.map(ing => `
+                                <div class="ingredient-item">
+                                    ${ing.ingredient}: ${ing.measure}
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <h3>Instructions:</h3>
+                        <p class="instructions">${meal.strInstructions}</p>
+
+                        ${meal.strYoutube ? `
+                            <a href="${meal.strYoutube}" target="_blank" class="youtube-link">
+                                Watch on YouTube
+                            </a>
+                        ` : ''}
+                    `;
+
+                    document.getElementById('mealModal').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching meal details:', error);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('mealModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('mealModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
